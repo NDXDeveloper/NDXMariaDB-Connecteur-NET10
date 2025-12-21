@@ -12,7 +12,7 @@ namespace NDXMariaDB;
 /// </summary>
 /// <remarks>
 /// <para>Portée et modernisée depuis Class_MySql.vb (.NET Framework 4.7.2)</para>
-/// <para>Auteur original: Nicolas DEOUX - </para>
+/// <para>Auteur original: Nicolas DEOUX </para>
 /// <para>Modernisation: Nicolas DEOUX - NDXDev 2025</para>
 /// </remarks>
 public sealed class MariaDbConnection : IMariaDbConnection
