@@ -28,11 +28,14 @@ Vous cherchez une bibliothèque de connexion MariaDB/MySQL qui soit **simple**, 
 ## Installation rapide
 
 ```bash
-# Via .NET CLI
-dotnet add package NDXMariaDB
+# Cloner le dépôt
+git clone https://github.com/TON_USER/NDXMariaDB-Connecteur-NET10.git
 
-# Via Package Manager
-Install-Package NDXMariaDB
+# Ajouter une référence au projet dans votre solution
+dotnet add reference chemin/vers/src/NDXMariaDB/NDXMariaDB.csproj
+```
+
+Ou simplement copier le dossier `src/NDXMariaDB` dans votre solution.
 ```
 
 ---
@@ -268,11 +271,11 @@ NDXMariaDB/
 │   ├── TransactionExamples.cs
 │   └── AdvancedExamples.cs
 ├── docs/                         # Documentation
-├── docker/                       # Configuration Docker
-│   ├── docker-compose.yml
-│   ├── config/my.cnf
-│   └── init/
-└── previous (4.7.2)/            # Code source original .NET 4.7.2
+└── docker/                       # Configuration Docker
+    ├── docker-compose.yml
+    ├── config/my.cnf
+    └── init/
+
 ```
 
 ---
@@ -305,7 +308,7 @@ dotnet test --collect:"XPlat Code Coverage"
 
 ## Documentation
 
-La documentation complète est disponible dans le fichier [SOMMAIRE.md](SOMMAIRE.md).
+La documentation complète est disponible dans le fichier [SOMMAIRE.md](/SOMMAIRE.md).
 
 ---
 
@@ -327,7 +330,7 @@ La documentation complète est disponible dans le fichier [SOMMAIRE.md](SOMMAIRE
 
 ## Licence
 
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+Ce projet est sous licence MIT. Voir le fichier [LICENSE](/LICENSE) pour plus de détails.
 
 ---
 
