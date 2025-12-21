@@ -52,11 +52,11 @@ TestResults/
 # =============================================================================
 
 # VS Code (garder .vscode mais ignorer certains fichiers)
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+#.vscode/*
+#!.vscode/settings.json
+#!.vscode/tasks.json
+#!.vscode/launch.json
+#!.vscode/extensions.json
 
 # JetBrains
 *.sln.iml

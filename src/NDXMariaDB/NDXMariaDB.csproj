@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Informations du package NuGet -->
+    <PackageId>NDXMariaDB</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Nicolas DEOUX</Authors>
+    <Company>NDXDev</Company>
+    <Product>NDXMariaDB</Product>
+    <Description>Bibliothèque de connexion MariaDB/MySQL moderne et performante pour .NET 10. Support complet des opérations asynchrones, gestion des transactions, pooling de connexions et compatibilité multiplateforme Windows/Linux.</Description>
+    <Copyright>Copyright (c) 2025 Nicolas DEOUX</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/NDXDev/NDXMariaDB</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/NDXDev/NDXMariaDB</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>mariadb;mysql;database;connection;async;dotnet;cross-platform;linux;windows</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- Documentation XML -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <!-- Compilation déterministe -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
