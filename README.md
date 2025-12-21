@@ -29,7 +29,7 @@ Vous cherchez une bibliothèque de connexion MariaDB/MySQL qui soit **simple**, 
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/TON_USER/NDXMariaDB-Connecteur-NET10.git
+git clone https://github.com/NDXDeveloper/NDXMariaDB-Connecteur-NET10.git
 
 # Ajouter une référence au projet dans votre solution
 dotnet add reference chemin/vers/src/NDXMariaDB/NDXMariaDB.csproj
