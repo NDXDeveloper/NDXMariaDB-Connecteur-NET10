@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Tests NDXMariaDB",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-tests",
+            "program": "dotnet",
+            "args": [
+                "test",
+                "${workspaceFolder}/tests/NDXMariaDB.Tests/NDXMariaDB.Tests.csproj",
+                "--no-build"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Debug Tests",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-tests",
+            "program": "${workspaceFolder}/tests/NDXMariaDB.Tests/bin/Debug/net10.0/NDXMariaDB.Tests.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/tests/NDXMariaDB.Tests",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        }
+    ]
+}

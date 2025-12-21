@@ -1,0 +1,90 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/NDXMariaDB.sln",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "build-tests",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/tests/NDXMariaDB.Tests/NDXMariaDB.Tests.csproj",
+                "/property:GenerateFullPaths=true"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "test",
+                "${workspaceFolder}/tests/NDXMariaDB.Tests/NDXMariaDB.Tests.csproj",
+                "--no-build",
+                "--verbosity",
+                "normal"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "restore",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "restore",
+                "${workspaceFolder}/NDXMariaDB.sln"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "clean",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "clean",
+                "${workspaceFolder}/NDXMariaDB.sln"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "docker-up",
+            "type": "shell",
+            "command": "docker compose -f ${workspaceFolder}/docker/docker-compose.yml up -d",
+            "problemMatcher": [],
+            "group": "none"
+        },
+        {
+            "label": "docker-down",
+            "type": "shell",
+            "command": "docker compose -f ${workspaceFolder}/docker/docker-compose.yml down",
+            "problemMatcher": [],
+            "group": "none"
+        },
+        {
+            "label": "docker-logs",
+            "type": "shell",
+            "command": "docker compose -f ${workspaceFolder}/docker/docker-compose.yml logs -f",
+            "problemMatcher": [],
+            "group": "none"
+        }
+    ]
+}

@@ -1,0 +1,86 @@
+# ============================================================================
+# NDXMariaDB - Docker Compose pour environnement de développement/tests
+# ============================================================================
+# Ce fichier configure un conteneur MariaDB 11.8 LTS pour les tests
+# de la bibliothèque NDXMariaDB.
+#
+# Auteur: Nicolas DEOUX <NDXDev@gmail.com>
+# Version: 1.0.0
+#
+# UTILISATION:
+#   Démarrer:     docker compose up -d
+#   Arrêter:      docker compose down
+#   Logs:         docker compose logs -f
+#   Supprimer:    docker compose down -v --rmi all
+# ============================================================================
+
+services:
+  mariadb:
+    image: mariadb:11.8
+    container_name: ndxmariadb-test
+    restart: unless-stopped
+
+    # Configuration des ports
+    ports:
+      - "3306:3306"
+
+    # Variables d'environnement
+    environment:
+      # Mot de passe root (à modifier en production!)
+      MARIADB_ROOT_PASSWORD: rootpassword
+
+      # Base de données créée automatiquement au démarrage
+      MARIADB_DATABASE: ndxmariadb_test
+
+      # Utilisateur de test créé automatiquement
+      MARIADB_USER: testuser
+      MARIADB_PASSWORD: testpassword
+
+      # Options de démarrage
+      MARIADB_AUTO_UPGRADE: "1"
+      MARIADB_INITDB_SKIP_TZINFO: "1"
+
+    # Volumes pour persistance des données
+    volumes:
+      # Données MariaDB persistantes
+      - mariadb_data:/var/lib/mysql
+
+      # Scripts d'initialisation (exécutés au premier démarrage)
+      - ./init:/docker-entrypoint-initdb.d:ro
+
+      # Configuration personnalisée (optionnel)
+      - ./config/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+
+    # Limite des ressources (optionnel, ajuster selon vos besoins)
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+
+    # Healthcheck pour vérifier l'état du conteneur
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    # Configuration réseau
+    networks:
+      - ndxmariadb-network
+
+# Définition des volumes nommés
+volumes:
+  mariadb_data:
+    driver: local
+    name: ndxmariadb-data
+
+# Définition du réseau
+networks:
+  ndxmariadb-network:
+    driver: bridge
+    name: ndxmariadb-net
