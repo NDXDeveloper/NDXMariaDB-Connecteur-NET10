@@ -1,4 +1,4 @@
-# Sommaire - Documentation NDXPostgreSQL
+# Sommaire - Documentation NDXMariaDB
 
 ## Guide de démarrage
 
@@ -28,17 +28,16 @@
   - Installation et configuration
   - Commandes essentielles
   - Configuration personnalisée
-  - pgAdmin (interface web)
   - Dépannage
 
 ### Exemples
 
 - [Exemples d'utilisation](examples/README.md)
-  - [CRUD de base](examples/BasicCrudExamples.cs) - INSERT, SELECT, UPDATE, DELETE, JSONB
-  - [Fonctions et procédures](examples/StoredProcedureExamples.cs) - Fonctions PostgreSQL, OUT params
-  - [Tâches planifiées](examples/ScheduledJobsExamples.cs) - pg_cron, jobs récurrents
-  - [Transactions](examples/TransactionExamples.cs) - Transactions, savepoints, isolation
-  - [Avancé](examples/AdvancedExamples.cs) - Health checks, DI, LISTEN/NOTIFY, monitoring
+  - [CRUD de base](examples/BasicCrudExamples.cs) - INSERT, SELECT, UPDATE, DELETE
+  - [Procédures stockées](examples/StoredProcedureExamples.cs) - IN, OUT, INOUT
+  - [Event Scheduler](examples/EventSchedulerExamples.cs) - Tâches planifiées
+  - [Transactions](examples/TransactionExamples.cs) - Transactions et bulk operations
+  - [Avancé](examples/AdvancedExamples.cs) - Health checks, DI, monitoring
 
 ## Références
 
@@ -46,24 +45,24 @@
 
 | Classe | Description |
 |--------|-------------|
-| `PostgreSqlConnection` | Connexion principale avec gestion async |
-| `PostgreSqlConnectionOptions` | Options de configuration |
-| `PostgreSqlConnectionFactory` | Factory pour créer des connexions |
-| `PostgreSqlHealthCheck` | Vérification de l'état de la base |
+| `MariaDbConnection` | Connexion principale avec gestion async |
+| `MariaDbConnectionOptions` | Options de configuration |
+| `MariaDbConnectionFactory` | Factory pour créer des connexions |
+| `MariaDbHealthCheck` | Vérification de l'état de la base |
 
 ### Interfaces
 
 | Interface | Description |
 |-----------|-------------|
-| `IPostgreSqlConnection` | Interface de connexion |
-| `IPostgreSqlConnectionFactory` | Interface de factory |
+| `IMariaDbConnection` | Interface de connexion |
+| `IMariaDbConnectionFactory` | Interface de factory |
 
 ### Options de connexion
 
 | Propriété | Type | Défaut | Description |
 |-----------|------|--------|-------------|
-| `Host` | string | localhost | Serveur PostgreSQL |
-| `Port` | int | 5432 | Port de connexion |
+| `Server` | string | localhost | Serveur MariaDB |
+| `Port` | int | 3306 | Port de connexion |
 | `Database` | string | - | Nom de la base |
 | `Username` | string | - | Utilisateur |
 | `Password` | string | - | Mot de passe |
@@ -73,9 +72,10 @@
 | `MaxPoolSize` | int | 100 | Taille max du pool |
 | `ConnectionTimeoutSeconds` | int | 30 | Timeout connexion |
 | `CommandTimeoutSeconds` | int | 30 | Timeout commande |
-| `LockTimeoutMs` | int | 120000 | Timeout verrous (ms) |
-| `SslMode` | string | Prefer | Mode SSL (Disable, Prefer, Require) |
-| `Multiplexing` | bool | false | Activer le multiplexing |
+| `InnoDbLockWaitTimeout` | int | 120 | Timeout verrous InnoDB |
+| `UseSsl` | bool | false | Activer SSL |
+| `SslMode` | string | Preferred | Mode SSL |
+| `AllowUserVariables` | bool | true | Variables @ (pour OUT/INOUT) |
 | `IsPrimaryConnection` | bool | false | Connexion principale |
 | `AutoCloseTimeoutMs` | int | 60000 | Fermeture auto (ms) |
 | `DisableAutoClose` | bool | false | Désactiver fermeture auto |
@@ -84,66 +84,53 @@
 
 ### CRUD
 
-- INSERT avec RETURNING pour récupérer les IDs
+- INSERT avec paramètres nommés
 - SELECT vers DataTable ou DataReader
 - SELECT scalaire typé
 - UPDATE avec conditions
 - DELETE avec paramètres
-- Support JSONB natif
 
 ### Transactions
 
 - BeginTransaction / BeginTransactionAsync
 - Commit / CommitAsync
 - Rollback / RollbackAsync
-- Savepoints (CreateSavepoint, RollbackToSavepoint, ReleaseSavepoint)
 - Niveaux d'isolation (ReadUncommitted, ReadCommitted, RepeatableRead, Serializable)
 
-### Fonctions et procédures
+### Procédures stockées
 
-- Fonctions retournant un scalaire
-- Fonctions retournant des enregistrements (RETURNS TABLE)
-- Fonctions avec paramètres OUT
-- Fonctions retournant SETOF
-- Procédures stockées (CALL, PostgreSQL 11+)
-- Procédures avec paramètres INOUT
+- Paramètres IN (entrée)
+- Paramètres OUT (sortie)
+- Paramètres INOUT (entrée/sortie)
+- Résultats multiples
+- Variables utilisateur (@variable)
 
-### Tâches planifiées (pg_cron)
+### Event Scheduler
 
-- Jobs ponctuels et récurrents
-- Syntaxe cron standard
-- Gestion (activer/désactiver/supprimer)
-- Historique d'exécution
-- Notifications d'échec
-
-### Fonctionnalités PostgreSQL spécifiques
-
-- JSONB (insertion, requêtes, index GIN)
-- Arrays (TEXT[], INT[], etc.)
-- UUID natif
-- LISTEN/NOTIFY
-- Types composites
-- Fonctions de fenêtrage (window functions)
+- Événements ponctuels (AT)
+- Événements récurrents (EVERY)
+- Dates de début/fin (STARTS/ENDS)
+- Gestion (ENABLE/DISABLE/DROP)
+- Appel de procédures stockées
 
 ### Autres
 
 - Fermeture automatique des connexions inactives
-- Historique des actions (5 dernières)
+- Historique des actions
 - Health checks intégrés
 - Logging avec ILogger
 - Injection de dépendances
-- ClearPool pour libérer le pool de connexions
 
 ## Tests couverts
 
 ### Tests unitaires (17)
 
-- PostgreSqlConnectionOptions
+- MariaDbConnectionOptions
   - Valeurs par défaut
   - Construction de chaîne de connexion
   - Modes SSL
-  - Clone des options
-- PostgreSqlConnectionFactory
+  - AllowUserVariables
+- MariaDbConnectionFactory
   - Création de connexions
   - IDs uniques
   - Connexion principale
@@ -152,58 +139,56 @@
 
 - Connexions
   - Open/Close async
-  - Dispose async avec ClearPool
+  - Dispose async
   - États et historique
 - CRUD
-  - INSERT simple et avec RETURNING
+  - INSERT simple et multiple
   - SELECT (scalaire, query, reader)
   - UPDATE avec paramètres
   - DELETE conditionnel
   - Opérations en masse
-  - JSONB (insertion et requêtes)
 - Transactions
   - Commit
   - Rollback
-  - Savepoints
   - Isolation levels
-- Fonctions et procédures
-  - Fonctions scalaires
-  - Fonctions avec RETURNS TABLE
-  - Fonctions avec OUT
-  - Procédures stockées (CALL)
-- pg_cron
-  - Vérification disponibilité
-  - Création de jobs
-  - Suppression
-  - Historique d'exécution
-- LISTEN/NOTIFY
-  - Notifications synchrones
-  - Notifications avec payload
+- Procédures stockées
+  - Appel simple
+  - Paramètres IN
+  - Paramètres OUT
+  - Paramètres INOUT
+  - Combinaisons multiples
+- Event Scheduler
+  - Vérification activation
+  - Création/suppression
+  - Événements récurrents
+  - Exécution ponctuelle
+  - Modification (ALTER)
+  - Avec procédures stockées
+  - Liste des événements
+  - Conditions
 
 ### Health Checks (3)
 
 - Connexion saine
 - Connexion défaillante
-- Informations serveur (version, uptime)
+- Informations serveur
 
 ## Historique
 
 ### Version 1.0.0 (Décembre 2025)
 
-- Version initiale pour PostgreSQL
+- Portage initial depuis .NET Framework 4.7.2
 - Support complet async/await
 - Compatibilité Windows et Linux
 - 55 tests unitaires et d'intégration
-- Configuration Docker PostgreSQL 18
-- Support pg_cron pour les tâches planifiées
-- Support JSONB natif
-- Savepoints pour les transactions
-- LISTEN/NOTIFY pour les notifications
+- Configuration Docker MariaDB 11.8 LTS
+- Event Scheduler support
+- Procédures stockées IN/OUT/INOUT
 - Exemples complets documentés
 
 ## Ressources externes
 
-- [Documentation PostgreSQL](https://www.postgresql.org/docs/18/)
-- [pg_cron Extension](https://github.com/citusdata/pg_cron)
-- [Npgsql Documentation](https://www.npgsql.org/doc/)
+- [Documentation MariaDB](https://mariadb.com/kb/en/)
+- [Event Scheduler MariaDB](https://mariadb.com/kb/en/event-scheduler/)
+- [MySqlConnector](https://mysqlconnector.net/)
 - [.NET 10 Documentation](https://docs.microsoft.com/dotnet/)

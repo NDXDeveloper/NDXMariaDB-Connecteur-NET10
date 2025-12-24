@@ -1,26 +1,25 @@
-# NDXPostgreSQL
+# NDXMariaDB
 
-**Bibliothèque de connexion PostgreSQL moderne et performante pour .NET 10**
+**Bibliothèque de connexion MariaDB/MySQL moderne et performante pour .NET 10**
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
+[![MariaDB](https://img.shields.io/badge/MariaDB-11.8%20LTS-003545?style=flat-square&logo=mariadb)](https://mariadb.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue?style=flat-square)]()
 [![Tests](https://img.shields.io/badge/Tests-55%20passed-brightgreen?style=flat-square)]()
 
 ---
 
-## Pourquoi NDXPostgreSQL ?
+## Pourquoi NDXMariaDB ?
 
-Vous cherchez une bibliothèque de connexion PostgreSQL qui soit **simple**, **moderne** et **performante** ? NDXPostgreSQL est faite pour vous !
+Vous cherchez une bibliothèque de connexion MariaDB/MySQL qui soit **simple**, **moderne** et **performante** ? NDXMariaDB est faite pour vous !
 
 - **Async/Await natif** : Toutes les opérations supportent l'asynchrone
 - **Cross-platform** : Fonctionne sur Windows et Linux sans modification
 - **Gestion automatique** : Fermeture automatique des connexions inactives
-- **Transactions simplifiées** : API intuitive avec support des savepoints
-- **Fonctions et procédures** : Support complet des fonctions PostgreSQL
-- **pg_cron** : Création et gestion des tâches planifiées
-- **JSONB** : Support natif des types JSON PostgreSQL
+- **Transactions simplifiées** : API intuitive pour gérer vos transactions
+- **Procédures stockées** : Support complet IN, OUT, INOUT
+- **Event Scheduler** : Création et gestion des tâches planifiées
 - **Logging intégré** : Compatible avec Microsoft.Extensions.Logging
 - **Injection de dépendances** : S'intègre parfaitement avec DI
 
@@ -30,34 +29,35 @@ Vous cherchez une bibliothèque de connexion PostgreSQL qui soit **simple**, **m
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/NDXDeveloper/NDXPostgreSQL-Connecteur-NET10.git
+git clone https://github.com/NDXDeveloper/NDXMariaDB-Connecteur-NET10.git
 
 # Ajouter une référence au projet dans votre solution
-dotnet add reference chemin/vers/src/NDXPostgreSQL/NDXPostgreSQL.csproj
+dotnet add reference chemin/vers/src/NDXMariaDB/NDXMariaDB.csproj
 ```
 
-Ou simplement copier le dossier `src/NDXPostgreSQL` dans votre solution.
+Ou simplement copier le dossier `src/NDXMariaDB` dans votre solution.
+```
 
 ---
 
 ## Démarrage en 30 secondes
 
 ```csharp
-using NDXPostgreSQL;
+using NDXMariaDB;
 
 // Création d'une connexion
-var options = new PostgreSqlConnectionOptions
+var options = new MariaDbConnectionOptions
 {
-    Host = "localhost",
+    Server = "localhost",
     Database = "ma_base",
     Username = "utilisateur",
     Password = "mot_de_passe"
 };
 
-await using var connection = new PostgreSqlConnection(options);
+await using var connection = new MariaDbConnection(options);
 
 // Exécuter une requête
-var result = await connection.ExecuteScalarAsync<long>("SELECT COUNT(*) FROM users");
+var result = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM users");
 Console.WriteLine($"Nombre d'utilisateurs: {result}");
 ```
 
@@ -68,9 +68,9 @@ Console.WriteLine($"Nombre d'utilisateurs: {result}");
 ### Opérations CRUD asynchrones
 
 ```csharp
-// INSERT avec RETURNING (récupère l'ID généré)
-var newId = await connection.ExecuteScalarAsync<int>(
-    "INSERT INTO users (name, email) VALUES (@name, @email) RETURNING id",
+// INSERT avec paramètres
+await connection.ExecuteNonQueryAsync(
+    "INSERT INTO users (name, email) VALUES (@name, @email)",
     new { name = "Jean", email = "jean@example.com" });
 
 // SELECT avec DataTable
@@ -92,22 +92,14 @@ await connection.ExecuteNonQueryAsync(
     new { id = 1 });
 ```
 
-### Gestion des transactions avec savepoints
+### Gestion des transactions
 
 ```csharp
 await connection.BeginTransactionAsync();
 try
 {
     await connection.ExecuteNonQueryAsync("UPDATE accounts SET balance = balance - 100 WHERE id = 1");
-
-    // Créer un savepoint
-    await connection.CreateSavepointAsync("before_transfer");
-
     await connection.ExecuteNonQueryAsync("UPDATE accounts SET balance = balance + 100 WHERE id = 2");
-
-    // En cas de problème, rollback jusqu'au savepoint
-    // await connection.RollbackToSavepointAsync("before_transfer");
-
     await connection.CommitAsync();
 }
 catch
@@ -117,70 +109,55 @@ catch
 }
 ```
 
-### Fonctions et procédures stockées
+### Procédures stockées avec IN, OUT, INOUT
 
 ```csharp
-// Fonction retournant un scalaire
-var tva = await connection.ExecuteScalarAsync<decimal>(
-    "SELECT calculer_tva(@montant, @taux)",
-    new { montant = 100.00m, taux = 0.20m });
+// Procédure avec paramètres IN
+var result = await connection.ExecuteQueryAsync(
+    "CALL sp_get_clients_by_status(@status)",
+    new { status = "active" });
 
-// Fonction retournant un enregistrement
-var stats = await connection.ExecuteQueryAsync(
-    "SELECT * FROM obtenir_stats_client(@id)",
-    new { id = 1 });
+// Procédure avec paramètre OUT
+await connection.ExecuteNonQueryAsync("CALL sp_count_clients(@result)");
+var count = await connection.ExecuteScalarAsync<int>("SELECT @result");
 
-// Procédure stockée (PostgreSQL 11+)
-await connection.ExecuteNonQueryAsync(
-    "CALL transferer_stock(@source, @destination, @quantite)",
-    new { source = 1, destination = 2, quantite = 10 });
+// Procédure avec paramètre INOUT
+await connection.ExecuteNonQueryAsync("SET @price = 100.00");
+await connection.ExecuteNonQueryAsync("CALL sp_apply_discount(@productId, @price)", new { productId = 1 });
+var discountedPrice = await connection.ExecuteScalarAsync<decimal>("SELECT @price");
 ```
 
-### Support JSONB (spécifique PostgreSQL)
+### Event Scheduler (tâches planifiées)
 
 ```csharp
-// INSERT avec JSONB
-var metadata = """{"role": "admin", "permissions": ["read", "write"]}""";
-await connection.ExecuteNonQueryAsync(
-    "INSERT INTO users (name, metadata) VALUES (@name, @metadata::jsonb)",
-    new { name = "Admin", metadata });
+// Vérifier que l'Event Scheduler est activé
+var status = await connection.ExecuteScalarAsync<string>("SELECT @@event_scheduler");
 
-// Requête JSONB
-var admins = await connection.ExecuteQueryAsync(
-    "SELECT * FROM users WHERE metadata->>'role' = @role",
-    new { role = "admin" });
+// Créer un événement récurrent
+await connection.ExecuteNonQueryAsync(@"
+    CREATE EVENT evt_cleanup_logs
+    ON SCHEDULE EVERY 1 DAY
+    STARTS (CURRENT_DATE + INTERVAL 1 DAY + INTERVAL 2 HOUR)
+    DO DELETE FROM logs WHERE date_creation < NOW() - INTERVAL 30 DAY");
 
-// Recherche dans un tableau JSONB
-var writers = await connection.ExecuteQueryAsync(
-    "SELECT * FROM users WHERE metadata->'permissions' ? @perm",
-    new { perm = "write" });
-```
+// Créer un événement ponctuel
+await connection.ExecuteNonQueryAsync(@"
+    CREATE EVENT evt_send_report
+    ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 HOUR
+    DO CALL sp_generate_report()");
 
-### pg_cron (tâches planifiées)
-
-```csharp
-// Créer un job de nettoyage quotidien
-var jobId = await connection.ExecuteScalarAsync<long>(@"
-    SELECT cron.schedule(
-        'cleanup_old_logs',
-        '0 0 * * *',
-        $$DELETE FROM logs WHERE created_at < NOW() - INTERVAL '30 days'$$
-    )");
-
-// Lister les jobs
-var jobs = await connection.ExecuteQueryAsync("SELECT * FROM cron.job");
-
-// Supprimer un job
-await connection.ExecuteNonQueryAsync("SELECT cron.unschedule('cleanup_old_logs')");
+// Gérer les événements
+await connection.ExecuteNonQueryAsync("ALTER EVENT evt_cleanup_logs DISABLE");
+await connection.ExecuteNonQueryAsync("DROP EVENT IF EXISTS evt_cleanup_logs");
 ```
 
 ### Factory et injection de dépendances
 
 ```csharp
 // Configuration avec DI
-services.AddNDXPostgreSQL(options =>
+services.AddNDXMariaDB(options =>
 {
-    options.Host = "localhost";
+    options.Server = "localhost";
     options.Database = "ma_base";
     options.Username = "user";
     options.Password = "pass";
@@ -189,9 +166,9 @@ services.AddNDXPostgreSQL(options =>
 // Utilisation dans un service
 public class UserService
 {
-    private readonly IPostgreSqlConnectionFactory _factory;
+    private readonly IMariaDbConnectionFactory _factory;
 
-    public UserService(IPostgreSqlConnectionFactory factory)
+    public UserService(IMariaDbConnectionFactory factory)
     {
         _factory = factory;
     }
@@ -207,13 +184,12 @@ public class UserService
 ### Health Check intégré
 
 ```csharp
-var healthCheck = new PostgreSqlHealthCheck(connectionFactory);
+var healthCheck = new MariaDbHealthCheck(connectionFactory);
 var result = await healthCheck.CheckHealthAsync();
 
 if (result.IsHealthy)
 {
     Console.WriteLine($"Connexion OK - Temps: {result.ResponseTime.TotalMilliseconds}ms");
-    Console.WriteLine($"Version: {result.ServerVersion}");
 }
 ```
 
@@ -226,33 +202,33 @@ Le dossier `examples/` contient des exemples détaillés :
 | Fichier | Description |
 |---------|-------------|
 | `BasicCrudExamples.cs` | Opérations CRUD complètes |
-| `StoredProcedureExamples.cs` | Fonctions et procédures PostgreSQL |
-| `ScheduledJobsExamples.cs` | Tâches planifiées avec pg_cron |
-| `TransactionExamples.cs` | Transactions et savepoints |
-| `AdvancedExamples.cs` | Health checks, DI, JSONB, monitoring |
+| `StoredProcedureExamples.cs` | Procédures stockées IN/OUT/INOUT |
+| `EventSchedulerExamples.cs` | Tâches planifiées Event Scheduler |
+| `TransactionExamples.cs` | Transactions et opérations en masse |
+| `AdvancedExamples.cs` | Health checks, DI, monitoring |
 
 ---
 
 ## Configuration Docker pour les tests
 
-Le projet inclut une configuration Docker complète pour PostgreSQL 18 :
+Le projet inclut une configuration Docker complète pour MariaDB 11.8 LTS :
 
 ```bash
-# Démarrer PostgreSQL
+# Démarrer MariaDB
 cd docker
-docker compose up -d
+docker-compose up -d
 
 # Vérifier l'état
-docker compose ps
+docker-compose ps
 
 # Voir les logs
-docker compose logs -f
+docker-compose logs -f
 
 # Arrêter
-docker compose down
+docker-compose down
 
 # Supprimer tout (données incluses)
-docker compose down -v --rmi all
+docker-compose down -v --rmi all
 ```
 
 **Paramètres de connexion par défaut :**
@@ -260,45 +236,46 @@ docker compose down -v --rmi all
 | Paramètre | Valeur |
 |-----------|--------|
 | Hôte | localhost |
-| Port | 5432 |
-| Base | ndxpostgresql_test |
+| Port | 3306 |
+| Base | ndxmariadb_test |
 | Utilisateur | testuser |
-| Mot de passe | rootpassword |
+| Mot de passe | testpassword |
 
-**Configuration PostgreSQL incluse :**
-- Extensions uuid-ossp et pgcrypto activées
-- Configuration mémoire optimisée pour les tests
-- lock_timeout et statement_timeout configurés
-- Tables de test avec JSONB et triggers
+**Configuration MariaDB incluse :**
+- Event Scheduler activé (`event_scheduler = ON`)
+- UTF8MB4 par défaut
+- InnoDB optimisé pour les tests
+- Slow query log activé
 
 ---
 
 ## Structure du projet
 
 ```
-NDXPostgreSQL/
+NDXMariaDB/
 ├── src/
-│   └── NDXPostgreSQL/              # Bibliothèque principale
-│       ├── PostgreSqlConnection.cs
-│       ├── PostgreSqlConnectionOptions.cs
-│       ├── PostgreSqlConnectionFactory.cs
-│       ├── PostgreSqlHealthCheck.cs
+│   └── NDXMariaDB/              # Bibliothèque principale
+│       ├── MariaDbConnection.cs
+│       ├── MariaDbConnectionOptions.cs
+│       ├── MariaDbConnectionFactory.cs
+│       ├── MariaDbHealthCheck.cs
 │       └── Extensions/
 ├── tests/
-│   └── NDXPostgreSQL.Tests/        # 55 tests (unitaires + intégration)
+│   └── NDXMariaDB.Tests/        # 55 tests (unitaires + intégration)
 │       ├── Unit/
 │       └── Integration/
-├── examples/                        # Exemples d'utilisation
+├── examples/                     # Exemples d'utilisation
 │   ├── BasicCrudExamples.cs
 │   ├── StoredProcedureExamples.cs
-│   ├── ScheduledJobsExamples.cs
+│   ├── EventSchedulerExamples.cs
 │   ├── TransactionExamples.cs
 │   └── AdvancedExamples.cs
-├── docs/                            # Documentation
-└── docker/                          # Configuration Docker
+├── docs/                         # Documentation
+└── docker/                       # Configuration Docker
     ├── docker-compose.yml
-    ├── config/postgresql.conf
+    ├── config/my.cnf
     └── init/
+
 ```
 
 ---
@@ -311,10 +288,9 @@ Le projet inclut **55 tests** couvrant :
 - **Tests d'intégration (38)** :
   - Connexions et cycle de vie
   - Opérations CRUD
-  - Transactions (commit, rollback, savepoints, isolation levels)
-  - Fonctions et procédures stockées
-  - Support JSONB
-  - pg_cron (tâches planifiées)
+  - Transactions (commit, rollback, isolation levels)
+  - Procédures stockées (IN, OUT, INOUT)
+  - Event Scheduler (création, modification, exécution)
   - Health checks
 
 ```bash
@@ -339,7 +315,7 @@ La documentation complète est disponible dans le fichier [SOMMAIRE.md](/SOMMAIR
 ## Prérequis
 
 - **.NET 10.0** ou supérieur
-- **PostgreSQL 12+** (recommandé: 18)
+- **MariaDB 10.6+** ou **MySQL 8.0+**
 - **Docker** (optionnel, pour les tests)
 
 ---
